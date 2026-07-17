@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # ChromaDB Vector Database
+  chromadb:
+    image: chromadb/chroma:0.4.24
+    container_name: islamic-ai-chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=1
+    networks:
+      - islamic-ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Islamic AI Assistant API
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: islamic-ai-assistant
+    ports:
+      - "8000:8000"
+    environment:
+      # Groq API
+      - GROQ_API_KEY=${GROQ_API_KEY}
+
+      # ChromaDB
+      - CHROMA_MODE=http
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+
+      # HuggingFace offline mode
+      - TRANSFORMERS_OFFLINE=1
+      - HF_HUB_OFFLINE=1
+
+      # JWT
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - sqlite_data:/app/data
+      - models_cache:/root/.cache/huggingface
+      - ./logs:/app/logs
+    depends_on:
+      - chromadb
+    networks:
+      - islamic-ai-net
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    driver: local
+  sqlite_data:
+    driver: local
+  models_cache:
+    driver: local
+
+networks:
+  islamic-ai-net:
+    driver: bridge

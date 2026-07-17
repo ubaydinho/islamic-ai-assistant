@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Islamic AI Assistant</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+  }
+  .app {
+    width: 100%;
+    max-width: 720px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+  }
+  .header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  .header .config { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+  .header input {
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 140px;
+  }
+  .header button {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #f5f5f0;
+    cursor: pointer;
+  }
+  .header button:hover { background: #eee; }
+  .status { font-size: 12px; color: #888; padding: 4px 20px; }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 4px; }
+  .msg.assistant { align-self: flex-start; background: #f0f0eb; color: #222; border-bottom-left-radius: 4px; }
+  .msg.error { align-self: center; background: #fee2e2; color: #991b1b; font-size: 12px; max-width: 95%; }
+  .meta { font-size: 11px; color: #999; margin-top: 6px; }
+  .msg.user .meta { color: #cfe0ff; }
+  .citations { margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 8px; font-size: 12px; }
+  .citations .cite { color: #555; margin-bottom: 2px; }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+  }
+  .input-row input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+  .input-row button {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .input-row button:disabled { background: #aac0e8; cursor: default; }
+  .typing { font-size: 13px; color: #999; padding: 0 20px 8px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>Islamic AI Assistant</h1>
+    <div class="config">
+      <input id="apiUrl" value="http://localhost:8000" />
+      <button id="newSessionBtn">New session</button>
+    </div>
+  </div>
+  <div class="status" id="statusLine">No session yet. Click "New session" or just send a message (a session will be created automatically).</div>
+  <div class="messages" id="messages"></div>
+  <div class="typing" id="typingLine" style="display:none;">AI is answering...</div>
+  <div class="input-row">
+    <input id="msgInput" placeholder="Type a question, e.g. Explain ayat kursi" />
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<script>
+let sessionId = null;
+
+const apiUrlInput = document.getElementById('apiUrl');
+const statusLine = document.getElementById('statusLine');
+const messagesEl = document.getElementById('messages');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const typingLine = document.getElementById('typingLine');
+const newSessionBtn = document.getElementById('newSessionBtn');
+
+function baseUrl() {
+  return apiUrlInput.value.replace(/\/$/, '');
+}
+
+function addMessage(role, text, meta, citations) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  if (meta) {
+    const m = document.createElement('div');
+    m.className = 'meta';
+    m.textContent = meta;
+    div.appendChild(m);
+  }
+  if (citations && citations.length) {
+    const c = document.createElement('div');
+    c.className = 'citations';
+    citations.forEach(function(cit) {
+      const line = document.createElement('div');
+      line.className = 'cite';
+      line.textContent = '[' + cit.source_ref + '] ' + (cit.text_excerpt || '');
+      c.appendChild(line);
+    });
+    div.appendChild(c);
+  }
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addError(text) {
+  const div = document.createElement('div');
+  div.className = 'msg error';
+  div.textContent = text;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function createSession() {
+  statusLine.textContent = 'Creating new session...';
+  try {
+    const res = await fetch(baseUrl() + '/api/v1/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: 'id', madhab_preference: 'shafii' })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    sessionId = data.session_id;
+    statusLine.textContent = 'Active session: ' + sessionId;
+    return sessionId;
+  } catch (err) {
+    statusLine.textContent = 'Failed to create session.';
+    addError('Failed to create session: ' + err.message + ' (check that the API at ' + baseUrl() + ' is running, and check CORS if this is a network error)');
+    return null;
+  }
+}
+
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  if (!sessionId) {
+    const created = await createSession();
+    if (!created) return;
+  }
+
+  addMessage('user', text);
+  msgInput.value = '';
+  sendBtn.disabled = true;
+  typingLine.style.display = 'block';
+
+  try {
+    const res = await fetch(baseUrl() + '/api/v1/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, session_id: sessionId, stream: false })
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error('HTTP ' + res.status + ' - ' + errBody);
+    }
+
+    const data = await res.json();
+    const meta = 'confidence: ' + (data.confidence !== undefined ? data.confidence.toFixed(2) : '?') +
+                 ' · intent: ' + (data.intent || '?') +
+                 ' · ' + (data.response_time_ms || '?') + 'ms';
+    addMessage('assistant', data.answer || '(empty)', meta, data.citations);
+  } catch (err) {
+    addError('Request failed: ' + err.message);
+  } finally {
+    sendBtn.disabled = false;
+    typingLine.style.display = 'none';
+    msgInput.focus();
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') sendMessage();
+});
+newSessionBtn.addEventListener('click', function() {
+  sessionId = null;
+  createSession();
+});
+</script>
+
+</body>
+</html>

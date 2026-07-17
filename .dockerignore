@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Logs
+*.log
+logs/
+
+# Databases (will be in volumes)
+*.db
+*.sqlite
+*.sqlite3
+
+# ChromaDB data (will be in volumes)
+.chroma/
+data/chroma/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Tests
+tests/
+pytest.ini
+.pytest_cache/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Docs
+docs/
+README.md
+*.md
+
+# Kiro specs
+.kiro/

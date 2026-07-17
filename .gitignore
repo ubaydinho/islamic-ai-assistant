@@ -1,0 +1,70 @@
+# ============================================================
+# Islamic AI Assistant — .gitignore
+# ============================================================
+
+# Environment secrets — JANGAN pernah commit file ini!
+.env
+.env.local
+.env.production
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Knowledge base data (berisi teks Islam besar, unduh terpisah)
+data/knowledge/
+
+# Model cache (ratusan MB, tidak perlu di-commit)
+models/
+.cache/
+
+# ChromaDB persistent storage
+.chroma/
+chroma_data/
+
+# SQLite database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE & editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes (jika di-mount secara lokal)
+sqlite_data/
+models_cache/
+
+# Logs
+*.log
+logs/
+data/chroma/
