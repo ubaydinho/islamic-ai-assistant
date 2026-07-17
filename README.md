@@ -120,6 +120,21 @@ curl -X POST http://localhost:8000/api/v1/chat \
   -d '{"message": "Jelaskan ayat kursi", "session_id": "<your-session-id>"}'
 ```
 
+## Data Setup
+
+The raw knowledge base texts (`data/knowledge/`) and the generated vector database (`data/chroma/`) are **not included** in this repository or the Docker image — they're excluded via `.gitignore`/`.dockerignore` since they're either large, regenerable, or subject to source licensing.
+
+To run this project with your own data:
+
+1. Populate `data/knowledge/` with your source texts (Qur'an translations, Hadith collections, Fiqh rulings, Fatwa, Scholar Opinions), organized however `data/scripts/ingest.py` expects them.
+2. Run the ingestion script to embed and load them into ChromaDB:
+   ```bash
+   python data/scripts/ingest.py
+   ```
+3. This populates `data/chroma/`, which is mounted into the container as a volume — no rebuild needed after re-ingesting.
+
+**Note:** the demo/sample dataset used during development was intentionally small (a handful of documents per source type) for testing the pipeline logic, not for production-quality answers. Expanding the knowledge base is the main next step for improving answer coverage and confidence.
+
 ## Project Structure
 
 ```
