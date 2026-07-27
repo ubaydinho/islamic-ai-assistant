@@ -220,8 +220,6 @@ class LLMOrchestrator:
         logger.debug(f"Selected default model: {default_model}")
         return default_model
 
-    # TO BE CONTINUED in Part 2...
-    # (generate, retry logic, streaming akan ditambahkan di Part 2)
 
     def generate(
         self,
