@@ -197,8 +197,6 @@ async def get_session(
 
     return session
 
-# TO BE CONTINUED in Part 2...
-# (Chat endpoint akan ditambahkan di Part 2)
 
 # ============================================================
 # CHAT ENDPOINT
