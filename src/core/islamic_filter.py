@@ -177,9 +177,7 @@ class IslamicFilter:
             "misleading_score": min(misleading_score, 1.0)
         }
 
-    # TO BE CONTINUED...
-    # (Bagian 2 akan berisi: classify_intent, calculate_confidence,
-    # filter_query, filter_response methods)
+    
 
     def classify_intent(self, text: str) -> IntentCategory:
         """
