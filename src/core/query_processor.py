@@ -112,8 +112,6 @@ class QueryProcessor:
             response_time_ms=0
         )
 
-    # TO BE CONTINUED in Part 2...
-    # (process method akan ditambahkan di Part 2)
 
     def process(
         self,
